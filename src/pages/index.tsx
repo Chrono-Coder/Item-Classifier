@@ -81,12 +81,16 @@ export default function Home() {
 			</h1>
 
 			{image ? (
-				<div className='relative w-full md:w-[50%] h-[60%] md:h-[90%] mt-10'>
+				<div
+					className={`relative w-full h-[60%] md:h-full mt-10 pb-${
+						(image.height! / image.width!) * 100
+					}% `}
+				>
 					<Image
 						src={dataURL as string}
 						fill
-						className='shadow-sm rounded-2xl shadow-black'
-						style={{ objectFit: "cover" }}
+						className=''
+						style={{ objectFit: "contain" }}
 						alt='cat'
 					/>
 				</div>
