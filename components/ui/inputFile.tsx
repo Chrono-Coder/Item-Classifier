@@ -3,8 +3,10 @@ import { Label } from "./label";
 import { ChangeEvent } from "react";
 
 interface InputFileProps {
-	image: ImageData | null;
-	setImage: React.Dispatch<React.SetStateAction<ImageData | null>>;
+	image: ImageData | null | undefined;
+	setImage: React.Dispatch<
+		React.SetStateAction<ImageData | null | undefined>
+	>;
 	onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
 }
 

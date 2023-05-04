@@ -4,8 +4,8 @@ export default function Document() {
 	return (
 		<Html lang='en'>
 			<Head />
-			<title>Cat Breed Classifier</title>
-			<meta name='description' content='Cat Breed Classifier' />
+			<title>Item Classifier</title>
+			<meta name='description' content='Item Classifier' />
 			<meta name='theme-color' content='#000000' />
 			<meta
 				name='viewport'
