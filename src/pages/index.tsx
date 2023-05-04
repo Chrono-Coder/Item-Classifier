@@ -74,14 +74,14 @@ export default function Home() {
 
 	return (
 		<div
-			className={`bg-[#171A2C] flex flex-col gap-10 h-screen w-screen items-center justify-center py-24 px-7  ${inter.className}`}
+			className={`bg-[#171A2C] flex flex-col gap-10 h-screen w-screen items-center justify-center py-24 px-7   ${inter.className}`}
 		>
 			<h1 className='text-5xl font-bold text-center text-[#C9CAD5] fixed top-8 '>
 				Cat Predictor
 			</h1>
 
 			{image ? (
-				<div className='relative w-full h-[60%] mt-10'>
+				<div className='relative w-full md:w-[50%] h-[60%] md:h-[90%] mt-10'>
 					<Image
 						src={dataURL as string}
 						fill
@@ -91,10 +91,9 @@ export default function Home() {
 					/>
 				</div>
 			) : (
-				<div className='relative w-full h-[60%] mt-10'>
+				<div className='relative sm:w-full md:w-[50%] sm:h-[60%] md:h-full mt-10 flex justify-center'>
 					<Image
 						src={Peanut}
-						fill
 						className='shadow-sm rounded-2xl shadow-black'
 						style={{
 							objectFit: "cover",
@@ -104,7 +103,7 @@ export default function Home() {
 					/>
 				</div>
 			)}
-			<div className='flex flex-col w-full h-full gap-10 px-16 my-auto'>
+			<div className='flex flex-col w-full h-full gap-10 px-16 my-auto md:items-center'>
 				{(prediction || predicting) && (
 					<h1 className='p-0 m-0 font-medium text-center text-3xl text-[#C9CAD5]'>
 						{predicting ? (
@@ -118,29 +117,7 @@ export default function Home() {
 						)}
 					</h1>
 				)}
-				<InputFile
-					image={image}
-					setImage={setImage}
-					// onChange={() => {
-					// 	;
-					// }}
-				/>
-
-				{/* <Button
-					disabled={predicting}
-					className='text-black bg-gradient-to-tr from-[#EB772B] to-[#ffad66] hover:scale-[101%] ease-in-out duration-100 transition-all hover:bg-[#EB772B] hover:bg-opacity-90 rounded-full'
-					onClick={() => image && predict()}
-				>
-					{predicting ? (
-						<>
-							{" "}
-							<Loader2 className='w-4 h-4 mr-2 animate-spin' />
-							Calculating
-						</>
-					) : (
-						"Predict"
-					)}
-				</Button> */}
+				<InputFile image={image} setImage={setImage} />
 			</div>
 		</div>
 	);
