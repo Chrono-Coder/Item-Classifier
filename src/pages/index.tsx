@@ -17,17 +17,29 @@ export default function Home() {
 	const [stream, setStream] = useState<MediaStream | null>(null);
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const [progress, setProgress] = useState(0);
-	const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 	const version = 2;
 	const alpha = 0.5;
 
 	const openCamera = async () => {
 		try {
+			const isMobile = /iPhone|iPad|iPod|Android/i.test(
+				navigator.userAgent
+			);
+
+			// if (isMobile) {
+			// 	Swal.fire({
+			// 		title: "Mobile not supported",
+			// 		text: "Please use a desktop browser",
+			// 		icon: "error",
+			// 	});
+			// 	return;
+			// }
 			const devices = await navigator.mediaDevices.enumerateDevices();
 			const cameras = devices.filter(
 				(device) => device.kind === "videoinput"
 			);
+
 			const camera = await selectCamera(cameras);
 			const stream = await navigator.mediaDevices.getUserMedia({
 				video: { deviceId: camera.deviceId },
