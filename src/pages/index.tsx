@@ -23,18 +23,10 @@ export default function Home() {
 
 	const openCamera = async () => {
 		try {
-			const isMobile = /iPhone|iPad|iPod|Android/i.test(
-				navigator.userAgent
-			);
+			// const isMobile = /iPhone|iPad|iPod|Android/i.test(
+			// 	navigator.userAgent
+			// );
 
-			// if (isMobile) {
-			// 	Swal.fire({
-			// 		title: "Mobile not supported",
-			// 		text: "Please use a desktop browser",
-			// 		icon: "error",
-			// 	});
-			// 	return;
-			// }
 			const devices = await navigator.mediaDevices.enumerateDevices();
 			const cameras = devices.filter(
 				(device) => device.kind === "videoinput"
@@ -173,6 +165,8 @@ export default function Home() {
 				<video
 					ref={videoRef}
 					autoPlay
+					muted
+					playsInline
 					style={{ maxWidth: "100%" }}
 					className=' rounded-md p-2 outline-none focus:border-[#6c7ae0] transition-colors duration-150'
 				/>
