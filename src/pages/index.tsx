@@ -7,6 +7,7 @@ import * as tf from "@tensorflow/tfjs";
 import * as mobilenet from "@tensorflow-models/mobilenet";
 import { Button } from "../../components/ui/button";
 import { Progress } from "../../components/ui/progress";
+import Swal from "sweetalert2";
 
 export default function Home() {
 	const modelRef = useRef<any>();
@@ -16,16 +17,20 @@ export default function Home() {
 	const [stream, setStream] = useState<MediaStream | null>(null);
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const [progress, setProgress] = useState(0);
+	const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 	const version = 2;
 	const alpha = 0.5;
 
 	const openCamera = async () => {
-		setPredicting(true);
-
 		try {
+			const devices = await navigator.mediaDevices.enumerateDevices();
+			const cameras = devices.filter(
+				(device) => device.kind === "videoinput"
+			);
+			const camera = await selectCamera(cameras);
 			const stream = await navigator.mediaDevices.getUserMedia({
-				video: true,
+				video: { deviceId: camera.deviceId },
 			});
 			setStream(stream);
 			if (videoRef.current) {
@@ -34,6 +39,32 @@ export default function Home() {
 		} catch (err) {
 			console.log(err);
 		}
+	};
+	const selectCamera = async (cameras: any) => {
+		if (cameras.length === 1) {
+			return Promise.resolve(cameras[0]);
+		}
+
+		return Swal.fire({
+			title: "Select camera",
+			input: "select",
+			inputOptions: cameras.reduce((options: any, camera: any) => {
+				options[camera.deviceId] = camera.label;
+				return options;
+			}, {}),
+			inputPlaceholder: "Select camera",
+			showCancelButton: true,
+		}).then((result) => {
+			if (result.isConfirmed) {
+				const deviceId = result.value;
+				setPredicting(true);
+				return cameras.find(
+					(camera: any) => camera.deviceId === deviceId
+				);
+			} else {
+				throw new Error("Camera selection was cancelled");
+			}
+		});
 	};
 
 	useEffect(() => {
@@ -112,7 +143,7 @@ export default function Home() {
 						return prevProgress + 20;
 					}
 				});
-			}, 1100);
+			}, 1000);
 		} else {
 			setProgress(0);
 		}
