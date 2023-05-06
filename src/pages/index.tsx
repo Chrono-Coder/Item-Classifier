@@ -1,6 +1,6 @@
 import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, use } from "react";
 import * as tf from "@tensorflow/tfjs";
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import { Button } from "../../components/ui/button";
@@ -8,7 +8,7 @@ import Swal from "sweetalert2";
 import { Loader2 } from "lucide-react";
 export default function Home() {
 	const detectorRef = useRef<any>();
-	const [predicting, setPredicting] = useState(false);
+	const [isCameraReady, setCameraReady] = useState(false);
 	const [prediction, setPrediction] = useState<string | null>(null);
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const [isLoaded, setIsLoaded] = useState(false);
@@ -30,16 +30,13 @@ export default function Home() {
 			});
 			if (videoRef.current) {
 				videoRef.current.srcObject = stream;
-				setTimeout(() => {
-					setPredicting(true);
-					detectFromVideo();
-				}, 1000);
 			}
 		} catch (err) {
 			console.log(err);
 		}
 	};
 	const selectCamera = async (cameras: any) => {
+		// if (cameras.length === 1) return cameras[0];
 		return Swal.fire({
 			title: "Select camera",
 			input: "select",
@@ -52,7 +49,7 @@ export default function Home() {
 		}).then((result) => {
 			if (result.isConfirmed) {
 				const deviceId = result.value;
-				setPredicting(true);
+				setCameraReady(true);
 				return cameras.find(
 					(camera: any) => camera.deviceId === deviceId
 				);
@@ -61,6 +58,18 @@ export default function Home() {
 			}
 		});
 	};
+
+	useEffect(() => {
+		openCamera();
+	}, [isLoaded]);
+
+	useEffect(() => {
+		if (isCameraReady) {
+			setTimeout(() => {
+				detectFromVideo();
+			}, 3000);
+		}
+	}, [isCameraReady]);
 
 	useEffect(() => {
 		const loadModel = async () => {
@@ -132,7 +141,7 @@ export default function Home() {
 			<h1 className='text-5xl font-bold text-center text-[#C9CAD5] fixed top-8 '>
 				Item Predictor
 			</h1>
-			{predicting && (
+			{isCameraReady && (
 				<video
 					ref={videoRef}
 					autoPlay
@@ -150,12 +159,12 @@ export default function Home() {
 					</h1>
 				</div>
 			)}
-			<Button
+			{/* <Button
 				className='text-black bg-gradient-to-tr from-[#EB772B] to-[#ffad66] hover:scale-[101%] ease-in-out duration-100 transition-all hover:bg-[#EB772B] hover:bg-opacity-90 rounded-full'
 				onClick={openCamera}
 			>
-				{!predicting ? "Open Camera" : "Change Camera"}
-			</Button>
+				{!isCameraReady ? "Open Camera" : "Change Camera"}
+			</Button> */}
 		</div>
 	);
 }
