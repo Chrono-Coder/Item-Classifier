@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+	.canvas-style {
+		background: linear-gradient(to bottom, #fff, #ddd);
+		box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+		transform: rotate(10deg);
+		position: relative;
+	}
 	:root {
 		--background: 0 0% 100%;
 		--foreground: 222.2 47.4% 11.2%;

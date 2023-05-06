@@ -1,25 +1,17 @@
-import Image from "next/image";
 import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
-import { InputFile } from "@/../components/ui/inputFile";
 import { useEffect, useState, useRef, useMemo } from "react";
 import * as tf from "@tensorflow/tfjs";
-import * as mobilenet from "@tensorflow-models/mobilenet";
+import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import { Button } from "../../components/ui/button";
-import { Progress } from "../../components/ui/progress";
 import Swal from "sweetalert2";
-
+import { Loader2 } from "lucide-react";
 export default function Home() {
-	const modelRef = useRef<any>();
-	const [image, setImage] = useState<ImageData | null | undefined>(null);
+	const detectorRef = useRef<any>();
 	const [predicting, setPredicting] = useState(false);
 	const [prediction, setPrediction] = useState<string | null>(null);
-	const [stream, setStream] = useState<MediaStream | null>(null);
 	const videoRef = useRef<HTMLVideoElement>(null);
-	const [progress, setProgress] = useState(0);
-
-	const version = 2;
-	const alpha = 0.5;
+	const [isLoaded, setIsLoaded] = useState(false);
 
 	const openCamera = async () => {
 		try {
@@ -36,19 +28,18 @@ export default function Home() {
 			const stream = await navigator.mediaDevices.getUserMedia({
 				video: { deviceId: camera.deviceId },
 			});
-			setStream(stream);
 			if (videoRef.current) {
 				videoRef.current.srcObject = stream;
+				setTimeout(() => {
+					setPredicting(true);
+					detectFromVideo();
+				}, 1000);
 			}
 		} catch (err) {
 			console.log(err);
 		}
 	};
 	const selectCamera = async (cameras: any) => {
-		if (cameras.length === 1) {
-			return Promise.resolve(cameras[0]);
-		}
-
 		return Swal.fire({
 			title: "Select camera",
 			input: "select",
@@ -73,14 +64,11 @@ export default function Home() {
 
 	useEffect(() => {
 		const loadModel = async () => {
-			const cpuBackend = tf.findBackend("cpu");
-			if (cpuBackend === null) {
-				throw new Error("CPU backend not found.");
-			}
-			tf.setBackend("cpu");
 			try {
-				const modal = await mobilenet.load({ version, alpha });
-				modelRef.current = modal;
+				const modal2 = await cocoSsd.load();
+				detectorRef.current = modal2;
+				const backend = tf.getBackend();
+				setIsLoaded(true);
 			} catch (err) {
 				console.log(err);
 			}
@@ -89,71 +77,54 @@ export default function Home() {
 		loadModel();
 	}, []);
 
-	const predictFromVideo = async () => {
+	const detectFromVideo = async () => {
 		if (!videoRef.current) return;
 		const video = videoRef.current;
-		const canvas = document.createElement("canvas");
-		if (!video) return;
-		canvas.width = video.videoWidth;
-		canvas.height = video.videoHeight;
-		const ctx = canvas.getContext("2d");
-		ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-		const imageData = ctx?.getImageData(0, 0, canvas.width, canvas.height);
-		// preprocess imageData for your model
-		try {
-			const predictions = await modelRef.current.classify(imageData);
-			const pred = predictions as Array<{
-				className: string;
-				probability: number;
-			}>;
-			console.log(pred);
-
-			const maxIndex = pred.indexOf(
-				pred.reduce((prev, current) =>
-					prev.probability > current.probability ? prev : current
-				)
-			);
-			// setTimeout(() => {
-			setPrediction(pred[maxIndex].className);
-			// setPredicting(false);
-			// }, 1000);
-		} catch (err) {
-			console.log(err);
+		const detections = await detectorRef.current.detect(video);
+		const predictions = detections.map((detection: any) => {
+			return `${detection.class} - ${Math.round(detection.score * 100)}%`;
+		});
+		setPrediction(predictions.join(", "));
+		const old = document.getElementById("overlay");
+		if (old) {
+			old.remove();
 		}
-		// get predicted class and update UI
+		const overlayCanvas = document.createElement("canvas");
+		overlayCanvas.id = "overlay";
+		overlayCanvas.width = video.videoWidth;
+		overlayCanvas.height = video.videoHeight;
+		overlayCanvas.style.position = "absolute";
+		overlayCanvas.style.top = `${video.offsetTop}px`;
+		overlayCanvas.style.left = `${video.offsetLeft}px`;
+		video.parentNode?.appendChild(overlayCanvas);
+		const overlayCtx = overlayCanvas.getContext("2d");
+		if (!overlayCtx) return;
+
+		detections.forEach((object: any) => {
+			const [x, y, width, height] = object.bbox;
+			overlayCtx.strokeStyle = "#EB772B";
+			overlayCtx.lineWidth = 2;
+			overlayCtx.beginPath();
+			overlayCtx.rect(x, y, width, height);
+			overlayCtx.stroke();
+			overlayCtx.closePath();
+		});
+
+		requestAnimationFrame(detectFromVideo);
 	};
 
-	useEffect(() => {
-		let interval: NodeJS.Timeout;
-		if (predicting) {
-			interval = setInterval(() => {
-				if (videoRef.current) {
-					predictFromVideo();
-				}
-			}, 5000);
-		}
-		return () => clearInterval(interval);
-	}, [predicting, videoRef]);
+	// useEffect(() => {
+	// 	if (predicting) detectFromVideo();
+	// }, [predicting, videoRef]);
 
-	useEffect(() => {
-		if (!predicting) return;
-		let progressInterval: NodeJS.Timeout;
-		if (progress < 100) {
-			progressInterval = setInterval(() => {
-				setProgress((prevProgress) => {
-					if (prevProgress + 20 > 100) {
-						return 100;
-					} else {
-						return prevProgress + 20;
-					}
-				});
-			}, 1000);
-		} else {
-			setProgress(0);
-		}
-		return () => clearInterval(progressInterval);
-	}, [progress, predicting]);
-
+	if (!isLoaded)
+		return (
+			<div
+				className={`bg-[#171A2C] flex h-screen w-screen items-center justify-center   ${inter.className}`}
+			>
+				<Loader2 className='w-44 h-44 text-5xl text-[#EB772B] duration-1000 animate-spin ' />
+			</div>
+		);
 	return (
 		<div
 			className={`bg-[#171A2C] flex flex-col gap-10 h-screen w-screen items-center justify-center py-24 px-7   ${inter.className}`}
@@ -168,7 +139,7 @@ export default function Home() {
 					muted
 					playsInline
 					style={{ maxWidth: "100%" }}
-					className=' rounded-md p-2 outline-none focus:border-[#6c7ae0] transition-colors duration-150'
+					className=' rounded-md p-2 outline-none focus:border-[#6c7ae0] transition-colors duration-150 relative'
 				/>
 			)}
 
@@ -179,12 +150,11 @@ export default function Home() {
 					</h1>
 				</div>
 			)}
-			{predicting && <Progress value={progress} className='w-[18%] ' />}
 			<Button
 				className='text-black bg-gradient-to-tr from-[#EB772B] to-[#ffad66] hover:scale-[101%] ease-in-out duration-100 transition-all hover:bg-[#EB772B] hover:bg-opacity-90 rounded-full'
 				onClick={openCamera}
 			>
-				Open Camera
+				{!predicting ? "Open Camera" : "Change Camera"}
 			</Button>
 		</div>
 	);
