@@ -60,7 +60,7 @@ export default function Home() {
 	};
 
 	useEffect(() => {
-		openCamera();
+		if (isLoaded) openCamera();
 	}, [isLoaded]);
 
 	useEffect(() => {
